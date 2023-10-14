@@ -11,7 +11,12 @@ pub struct Player {
 }
 
 impl Player {
-    fn draw(&mut self, tile: Tile) {
+    /// Draw and place a tile into the player's hand
+    ///
+    /// # Arguments
+    ///
+    /// * `tile` - drawn tile
+    pub fn draw(&mut self, tile: Tile) {
         match self.hand.get(&tile) {
             Some(count) => {
                 self.hand.insert(tile, count + 1);
@@ -22,40 +27,24 @@ impl Player {
         }
     }
 
-    // Chi can be performed if an opponent's tile can make a set of 3 consecutive tiles. Example: 3, 4, 5
-    pub fn canChi(&self, tile: Tile) -> Option<Vec<Action>> {
-        match tile {
-            Tile::Wan(v) | Tile::Suo(v) | Tile::Tong(v) => {
-                let mut actions = vec![];
-                for (a, b) in vec![(-2, -1), (-1, 1), (1, 2)] {
-                    if v + a > 0 && v + b <= 9 {
-                        todo!()
-                    }
-                }
-                if actions.is_empty() {
-                    None
-                } else {
-                    Some(actions)
+    /// A player can perfrom the action 'chi' if they can form a sequence of 3 consecutive tiles
+    /// from a discarded tile of another player
+    ///
+    /// # Arguments
+    ///
+    /// * `tile` - the tile the check if 'chi' can be performed on
+    pub fn can_chi(&self, tile: Tile) -> Vec<Meld> {
+        let mut possible_melds = vec![];
+        if let Tile::Wan(_) | Tile::Suo(_) | Tile::Tong(_) = tile {
+            let tile_as_int: i8 = tile.into();
+            for (a, b) in &[(-2, -1), (-1, 1), (1, 2)] {
+                let tile_a = (tile_as_int + a).try_into().unwrap();
+                let tile_b = (tile_as_int + b).try_into().unwrap();
+                if self.hand.contains_key(&tile_a) && self.hand.contains_key(&tile_b) {
+                    possible_melds.push(Meld::Chi(tile_a, tile_b, tile_as_int.try_into().unwrap()))
                 }
             }
-            _ => None,
-        }
-    }
-
-    // Pong can be performed if an opponent's tile can make a set of 3 duplicate tiles. Example: 7, 7, 7
-    fn canPong(&self, tile: Tile) -> Option<Vec<Action>> {
-        todo!()
-    }
-
-    // Gang can be performed if an opponent's tile can make a set of 4 duplicate tiles. Example: 7, 7, 7, 7
-    fn canGang(&self, tile: Tile) -> Option<Action> {
-        todo!()
-    }
-
-    // AnGang can be performed if there are 4 duplicate tiles in player's hand. Example: 2, 2, 2, 2
-    fn canAnGang(&self) -> Option<Action> {
-        todo!()
+        };
+        possible_melds
     }
 }
-
-enum Action {}

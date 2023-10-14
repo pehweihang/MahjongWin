@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum Tile {
     Wan(i8),
     Suo(i8),
@@ -29,7 +29,21 @@ impl TryFrom<i8> for Tile {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+impl From<Tile> for i8 {
+    fn from(val: Tile) -> Self {
+        match val {
+            Tile::Wan(v) => v,
+            Tile::Suo(v) => 10 + v,
+            Tile::Tong(v) => 20 + v,
+            Tile::Feng(v) => 30 + v as i8,
+            Tile::Dragon(v) => 40 + v as i8,
+            Tile::Hua(v) => 50 + v as i8,
+            Tile::Animal(v) => 60 + v as i8,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum FengType {
     East = 1,
     South = 2,
@@ -51,7 +65,7 @@ impl TryFrom<i8> for FengType {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum DragonType {
     Zhong = 1,
     Baiban = 2,
@@ -71,7 +85,7 @@ impl TryFrom<i8> for DragonType {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum HuaType {
     RedOne = 1,
     RedTwo = 2,
@@ -101,7 +115,7 @@ impl TryFrom<i8> for HuaType {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum AnimalType {
     Cat = 1,
     Rat = 2,
