@@ -119,7 +119,7 @@ impl TryFrom<i8> for HuaType {
             6 => Ok(HuaType::BlueTwo),
             7 => Ok(HuaType::BlueThree),
             8 => Ok(HuaType::BlueFour),
-            invalid_value => Err(format!("Cannot convert {} into HuaColor", invalid_value)),
+            invalid_value => Err(format!("Cannot convert {} into HuaType", invalid_value)),
         }
     }
 }
