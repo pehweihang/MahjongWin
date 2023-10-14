@@ -8,6 +8,17 @@ pub struct Player {
     flowers: Vec<Tile>,
     animals: Vec<Tile>,
     melds: Vec<Meld>,
+
+    chips: i32,
+}
+
+impl Player {
+    pub fn new(chips: i32) -> Self {
+        Self {
+            chips,
+            ..Default::default()
+        }
+    }
 }
 
 impl Player {
@@ -46,6 +57,18 @@ impl Player {
             }
         };
         possible_melds
+    }
+
+    pub fn can_pong(&self, tile: Tile) -> Vec<Meld> {
+        todo!()
+    }
+
+    pub fn can_gang(&self, tile: Tile) -> Vec<Meld> {
+        todo!()
+    }
+
+    pub fn can_angang(&self) -> Vec<Meld> {
+        todo!()
     }
 }
 
