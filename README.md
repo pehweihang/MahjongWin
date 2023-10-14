@@ -1,1 +1,1 @@
-# Mahjong!
+# Mahjong Win!
