@@ -3,51 +3,28 @@ pub enum Tile {
     Wan(i8),
     Suo(i8),
     Tong(i8),
-    Feng(Option<FengType>),
-    Dragon(Option<DragonType>),
-    Hua(Option<HuaType>),
-    Animal(Option<AnimalType>),
-    Invalid()
+    Feng(FengType),
+    Dragon(DragonType),
+    Hua(HuaType),
+    Animal(AnimalType),
 }
 
-impl From<i8> for Tile {
-    fn from(value: i8) -> Self {
+impl TryFrom<i8> for Tile {
+    type Error = String;
+
+    fn try_from(value: i8) -> Result<Self, Self::Error> {
         let tile_value = value % 10;
         let tile_type = value / 10;
 
         match tile_type {
-            0 => Tile::Wan(tile_value),
-            1 => Tile::Suo(tile_value),
-            2 => Tile::Tong(tile_value),
-            3 => Tile::Feng(match FengType::try_from(tile_value) {
-                Ok(feng_type) => Some(feng_type),
-                Err(e) => {
-                    println!("Err: {}", e);
-                    None
-                }
-            }),
-            4 => Tile::Dragon(match DragonType::try_from(tile_value) {
-                Ok(dragon_type) => Some(dragon_type),
-                Err(e) => {
-                    println!("Err: {}", e);
-                    None
-                }
-            }),
-            5 => Tile::Hua(match HuaType::try_from(tile_value) {
-                Ok(hua_type) => Some(hua_type),
-                Err(e) => {
-                    println!("Err: {}", e);
-                    None
-                }
-            }),
-            6 => Tile::Animal(match AnimalType::try_from(tile_value) {
-                Ok(animal_type) => Some(animal_type),
-                Err(e) => {
-                    println!("Err: {}", e);
-                    None
-                }
-            }),
-            _ => Tile::Invalid()
+            0 => Ok(Tile::Wan(tile_value)),
+            1 => Ok(Tile::Suo(tile_value)),
+            2 => Ok(Tile::Tong(tile_value)),
+            3 => Ok(Tile::Feng(FengType::try_from(tile_value)?)),
+            4 => Ok(Tile::Dragon(DragonType::try_from(tile_value)?)),
+            5 => Ok(Tile::Hua(HuaType::try_from(tile_value)?)),
+            6 => Ok(Tile::Animal(AnimalType::try_from(tile_value)?)),
+            invalid_value => Err(format!("Cannot convert {} into Tile", invalid_value)),
         }
     }
 }
