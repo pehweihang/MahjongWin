@@ -1,4 +1,7 @@
-use super::{player::Player, tile::{Tile, DragonType, FengType, HuaType, AnimalType}};
+use super::{
+    player::Player,
+    tile::{AnimalType, DragonType, FengType, HuaType, Tile},
+};
 
 #[derive(Debug, Default)]
 struct Table {
@@ -9,11 +12,17 @@ struct Table {
 
     tiles: Vec<Tile>,
     discards: Vec<Tile>,
-    next_draw: usize
+    next_draw: usize,
 }
 
 impl Table {
-    pub fn new(players: [Player; 4]) -> Self {
+    pub fn new(starting_chips: i32) -> Self {
+        let players = [
+            Player::new(starting_chips),
+            Player::new(starting_chips),
+            Player::new(starting_chips),
+            Player::new(starting_chips),
+        ];
         let mut tiles = vec![];
         // 4 copies of each tile
         for _ in 0..4 {
@@ -22,7 +31,7 @@ impl Table {
                 tiles.push(Tile::Wan(i));
                 tiles.push(Tile::Suo(i));
                 tiles.push(Tile::Tong(i));
-            } 
+            }
             tiles.push(Tile::Dragon(DragonType::Fa));
             tiles.push(Tile::Dragon(DragonType::Zhong));
             tiles.push(Tile::Dragon(DragonType::Baiban));
@@ -31,7 +40,7 @@ impl Table {
             tiles.push(Tile::Feng(FengType::North));
             tiles.push(Tile::Feng(FengType::West));
             tiles.push(Tile::Feng(FengType::South));
-        };
+        }
 
         tiles.push(Tile::Hua(HuaType::RedOne));
         tiles.push(Tile::Hua(HuaType::RedTwo));
@@ -47,13 +56,16 @@ impl Table {
         tiles.push(Tile::Animal(AnimalType::Rooster));
         tiles.push(Tile::Animal(AnimalType::Centipede));
 
-        Self {tiles, players, ..Default::default() }
-
+        Self {
+            tiles,
+            players,
+            ..Default::default()
+        }
     }
 }
 
 #[derive(Debug, Default)]
-enum Feng{
+enum Feng {
     #[default]
     East,
     South,
