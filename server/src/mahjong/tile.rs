@@ -137,7 +137,7 @@ impl TryFrom<i8> for AnimalType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Meld {
     Chi(Tile, Tile, Tile),
     Pong(Tile),

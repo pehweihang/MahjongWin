@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use super::tile::{Meld, Tile};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Player {
     hand: HashMap<Tile, u8>,
     flowers: Vec<Tile>,
@@ -46,5 +46,67 @@ impl Player {
             }
         };
         possible_melds
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use crate::mahjong::tile::{Meld, Tile};
+
+    use super::Player;
+
+    #[test]
+    fn test_can_chi() {
+        let hand_before_chi = HashMap::from([
+            (Tile::Wan(1), 1),
+            (Tile::Wan(2), 1),
+            (Tile::Wan(8), 1),
+            (Tile::Wan(9), 1),
+            (Tile::Suo(1), 1),
+            (Tile::Suo(3), 1),
+            (Tile::Suo(6), 1),
+            (Tile::Suo(7), 1),
+            (Tile::Suo(8), 1),
+            (Tile::Suo(9), 1),
+        ]);
+        let player = Player {
+            hand: hand_before_chi,
+            ..Default::default()
+        };
+
+        // (tile to check, possible chi's)
+        let test_cases = vec![
+            (
+                // chi right
+                Tile::Wan(3),
+                vec![Meld::Chi(Tile::Wan(1), Tile::Wan(2), Tile::Wan(3))],
+            ),
+            // chi left
+            (
+                Tile::Wan(7),
+                vec![Meld::Chi(Tile::Wan(8), Tile::Wan(9), Tile::Wan(7))],
+            ),
+            // chi middle
+            (
+                Tile::Suo(2),
+                vec![Meld::Chi(Tile::Suo(1), Tile::Suo(3), Tile::Suo(2))],
+            ),
+            // chi multiple
+            (
+                Tile::Suo(7),
+                vec![
+                    Meld::Chi(Tile::Suo(6), Tile::Suo(8), Tile::Suo(7)),
+                    Meld::Chi(Tile::Suo(8), Tile::Suo(9), Tile::Suo(7)),
+                ],
+            ),
+            // cannot chi
+            (Tile::Tong(1), vec![]),
+        ];
+
+        for (tile, melds) in test_cases {
+            assert_eq!(player.can_chi(tile), melds);
+        }
     }
 }
