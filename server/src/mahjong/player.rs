@@ -38,19 +38,22 @@ impl Player {
         }
     }
 
-    /// A player can perfrom the action 'chi' if they can form a sequence of 3 consecutive tiles
+    /// A player can perform the action 'chi' if they can form a sequence of 3 consecutive tiles
     /// from a discarded tile of another player
     ///
     /// # Arguments
     ///
-    /// * `tile` - the tile the check if 'chi' can be performed on
+    /// * `tile` - the tile to check if 'chi' can be performed on
     pub fn can_chi(&self, tile: Tile) -> Vec<Meld> {
         let mut possible_melds = vec![];
+
         if let Tile::Wan(_) | Tile::Suo(_) | Tile::Tong(_) = tile {
             let tile_as_int: i8 = tile.into();
+
             for (a, b) in &[(-2, -1), (-1, 1), (1, 2)] {
                 let tile_a = (tile_as_int + a).try_into().unwrap();
                 let tile_b = (tile_as_int + b).try_into().unwrap();
+
                 if self.hand.contains_key(&tile_a) && self.hand.contains_key(&tile_b) {
                     possible_melds.push(Meld::Chi(tile_a, tile_b, tile_as_int.try_into().unwrap()))
                 }
@@ -59,16 +62,57 @@ impl Player {
         possible_melds
     }
 
+    /// A player can perform the action 'pong' if they can form a sequence of 3 identical tiles
+    /// from a discarded tile of another player
+    ///
+    /// # Arguments
+    ///
+    /// * `tile` - the tile to check if 'pong' can be performed on
     pub fn can_pong(&self, tile: Tile) -> Vec<Meld> {
-        todo!()
+        let mut possible_melds = vec![];
+
+        if let Some(&value) = self.hand.get(&tile) {
+            if value >= 2 {
+                possible_melds.push(Meld::Pong(tile))
+            }
+        }
+
+        possible_melds
     }
 
+    /// A player can perform the action 'gang' if they can form a sequence of 4 identical tiles
+    /// from a discarded tile of another player
+    ///
+    /// # Arguments
+    ///
+    /// * `tile` - the tile to check if 'gang' can be performed on
     pub fn can_gang(&self, tile: Tile) -> Vec<Meld> {
-        todo!()
+        let mut possible_melds = vec![];
+
+        if let Some(&value) = self.hand.get(&tile) {
+            if value == 3 {
+                possible_melds.push(Meld::Gang(tile))
+            }
+        }
+
+        possible_melds
     }
 
+    /// A player can perform the action 'angang' if they can form a sequence of 4 identical tiles from their hand
+    ///
+    /// # Arguments
+    ///
+    /// * `tile` - the tile to check if 'gang' can be performed on
     pub fn can_angang(&self) -> Vec<Meld> {
-        todo!()
+        let mut possible_melds = vec![];
+
+        for (key, &value) in &self.hand {
+            if value == 4 {
+                possible_melds.push(Meld::AnGang(key.clone()))
+            }
+        }
+
+        return  possible_melds;
     }
 }
 
