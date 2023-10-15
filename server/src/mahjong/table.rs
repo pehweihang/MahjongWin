@@ -1,3 +1,5 @@
+use rand::{seq::SliceRandom, Rng};
+
 use super::{
     player::Player,
     tile::{AnimalType, DragonType, FengType, HuaType, Tile},
@@ -13,6 +15,8 @@ struct Table {
     tiles: Vec<Tile>,
     discards: Vec<Tile>,
     next_draw: usize,
+
+    current_turn: usize,
 }
 
 impl Table {
@@ -61,6 +65,41 @@ impl Table {
             players,
             ..Default::default()
         }
+    }
+
+    pub fn draw_next_tile(&mut self, player_number: usize) {
+        // TODO error handling
+        self.players[player_number].draw(self.tiles.get(self.next_draw).unwrap().clone());
+        self.next_draw += 1;
+    }
+
+    pub fn new_game(&mut self) {
+        self.players.shuffle(&mut rand::thread_rng());
+        // first player is the banker for the first round
+        self.banker = 0;
+        self.current_feng = Feng::East;
+    }
+
+    pub fn new_round(&mut self) {
+        self.tiles.shuffle(&mut rand::thread_rng());
+        self.next_draw = 0;
+
+        for i in 0..4 {
+            for _ in 0..12 {
+                self.draw_next_tile(i);
+            }
+        }
+        self.draw_next_tile(self.banker);
+    }
+
+    pub fn next_turn(&mut self) {
+        // TODO
+        // player draws
+        // player action (zimuo, angang)
+        // player discards
+        // other player actions (hu, pong, gang, chi)
+        // set next players turn
+        todo!();
     }
 }
 
