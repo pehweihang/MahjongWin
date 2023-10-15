@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use super::tile::{Meld, Tile};
 
@@ -8,6 +8,8 @@ pub struct Player {
     flowers: Vec<Tile>,
     animals: Vec<Tile>,
     melds: Vec<Meld>,
+
+    skipped_tiles: HashSet<Tile>,
 
     chips: i32,
 }
@@ -36,6 +38,17 @@ impl Player {
                 self.hand.insert(tile, 1);
             }
         }
+        self.skipped_tiles.clear();
+    }
+
+    /// Keep track of tiles discarded by other players. The player cannot 'pong' or 'hu' from a
+    /// tile that is skipped by the player until the player draws again.
+    ///
+    /// # Arguments
+    ///
+    /// * `tile` - tile skipped by the player
+    pub fn skipped_tile(&mut self, tile: Tile) {
+        self.skipped_tiles.insert(tile);
     }
 
     /// A player can perform the action 'chi' if they can form a sequence of 3 consecutive tiles
@@ -70,6 +83,10 @@ impl Player {
     /// * `tile` - the tile to check if 'pong' can be performed on
     pub fn can_pong(&self, tile: Tile) -> Vec<Meld> {
         let mut possible_melds = vec![];
+
+        if self.skipped_tiles.contains(&tile) {
+            return possible_melds
+        }
 
         if let Some(&value) = self.hand.get(&tile) {
             if value >= 2 {
@@ -120,9 +137,21 @@ impl Player {
 mod tests {
     use std::collections::HashMap;
 
-    use crate::mahjong::tile::{AnimalType, DragonType, HuaType, Meld, Tile};
+    use crate::mahjong::tile::{DragonType, HuaType, Meld, Tile};
 
     use super::Player;
+
+    #[test]
+    fn test_skipped_tile() {
+        let hand = HashMap::from([(Tile::Wan(2), 2)]);
+        let mut player = Player {hand, ..Default::default()};
+
+        assert_eq!(player.can_pong(Tile::Wan(2)), vec![Meld::Pong(Tile::Wan(2))]);
+
+        player.skipped_tile(Tile::Wan(2));
+
+        assert_eq!(player.can_pong(Tile::Wan(2)), vec![]);
+    }
 
     #[test]
     fn test_can_chi() {
