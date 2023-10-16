@@ -200,7 +200,19 @@ impl Player {
     ///
     /// * `chi` - Set of tiles to perform chi on.
     pub fn chi(&mut self, chi: &Chi) -> Result<(), IllegalMoveError> {
-        todo!()
+        let tile_a: &Tile = chi.get_0();
+        let tile_b: &Tile = chi.get_1();
+        let tile_c: &Tile = chi.get_2();
+        let possible_melds: Vec<Meld> = self.get_chi(tile_c);
+
+        if let true = possible_melds.contains(&Meld::Chi(*chi)) {
+            self.remove_tiles_from_hand(tile_a, 1);
+            self.remove_tiles_from_hand(tile_b, 1);
+            self.melds.push(Meld::Chi(*chi));
+            Ok(())
+        } else {
+            Err(IllegalMoveError(Action::Meld(Meld::Chi(*chi))))
+        }
     }
 
     /// Perform the action 'pong'. After 'pong' the player will meld the set of tiles 'pong' is
@@ -210,7 +222,16 @@ impl Player {
     ///
     /// * `pong` - Set of tiles to perform 'pong' on.
     pub fn pong(&mut self, pong: &Pong) -> Result<(), IllegalMoveError> {
-        todo!()
+        let tile: &Tile = pong.get_0();
+        let possible_melds: Vec<Meld> = self.get_pong(tile);
+
+        if let true = possible_melds.contains(&Meld::Pong(*pong)) {
+            self.remove_tiles_from_hand(tile, 2);
+            self.melds.push(Meld::Pong(*pong));
+            Ok(())
+        } else {
+            Err(IllegalMoveError(Action::Meld(Meld::Pong(*pong))))
+        }
     }
 
     /// Perform the action 'gang'. After 'gang' the player will meld the set of tiles 'gang' is
@@ -220,7 +241,16 @@ impl Player {
     ///
     /// * `gang` - Set of tiles to perform 'gang' on.
     pub fn gang(&mut self, gang: &Gang) -> Result<(), IllegalMoveError> {
-        todo!()
+        let tile: &Tile = gang.get_0();
+        let possible_melds: Vec<Meld> = self.get_gang(tile);
+
+        if let true = possible_melds.contains(&Meld::Gang(*gang)) {
+            self.remove_tiles_from_hand(tile, 3);
+            self.melds.push(Meld::Gang(*gang));
+            Ok(())
+        } else {
+            Err(IllegalMoveError(Action::Meld(Meld::Gang(*gang))))
+        }
     }
 
     /// Perform the action 'angang'. After 'angang' the player will meld the set of tiles 'angang'
@@ -230,7 +260,28 @@ impl Player {
     ///
     /// * `gang` - Set of tiles to perform 'gang' on.
     pub fn angang(&mut self, angang: &AnGang) -> Result<(), IllegalMoveError> {
-        todo!()
+        let tile: &Tile = angang.get_0();
+        let possible_melds: Vec<Meld> = self.get_angang();
+
+        if let true = possible_melds.contains(&Meld::AnGang(*angang)) {
+            self.remove_tiles_from_hand(tile, 4);
+            self.melds.push(Meld::AnGang(*angang));
+            Ok(())
+        } else {
+            Err(IllegalMoveError(Action::Meld(Meld::AnGang(*angang))))
+        }
+    }
+
+    /// Utility function to remove tiles from player's hand
+    ///
+    /// # Arguments
+    ///
+    /// * `tile` - The tile to remove from player's hand
+    /// * `amount_to_remove` - The amount to remove of the specified tile
+    fn remove_tiles_from_hand(&mut self, tile: &Tile, amount_to_remove: u8) -> () {
+        if let Some(value) = self.hand.get_mut(tile) {
+            *value -= amount_to_remove;
+        }
     }
 }
 

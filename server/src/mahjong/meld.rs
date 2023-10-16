@@ -20,7 +20,7 @@ fn is_playable_tile(tile: &Tile) -> bool {
     !matches!(tile, Tile::Hua(_) | Tile::Animal(_))
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Chi(Tile, Tile, Tile);
 
 impl Chi {
@@ -56,7 +56,7 @@ impl Chi {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Pong(Tile);
 
 impl Pong {
@@ -72,7 +72,7 @@ impl Pong {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Gang(Tile);
 
 impl Gang {
@@ -87,7 +87,7 @@ impl Gang {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct AnGang(Tile);
 
 impl AnGang {
