@@ -293,6 +293,14 @@ impl Player {
             Err("Not enough tiles".to_string())
         }
     }
+
+    pub fn can_hu(&self, tile: &Tile) -> bool {
+        todo!()
+    }
+
+    pub fn can_zimuo(&self) -> bool {
+        todo!()
+    }
 }
 
 #[derive(Debug)]
@@ -300,6 +308,7 @@ pub enum Action {
     Hu,
     ZiMuo,
     Meld(Meld),
+    None,
 }
 
 impl std::fmt::Display for Action {
