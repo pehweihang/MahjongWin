@@ -1,7 +1,8 @@
-use rand::{seq::SliceRandom, Rng};
+use rand::seq::SliceRandom;
+use thiserror::Error;
 
 use super::{
-    player::Player,
+    player::{Action, Player},
     tile::{AnimalType, DragonType, FengType, HuaType, Tile},
 };
 
@@ -16,7 +17,8 @@ struct Table {
     discards: Vec<Tile>,
     next_draw: usize,
 
-    current_turn: usize,
+    current_player: usize,
+    current_state: GameState,
 }
 
 impl Table {
@@ -92,15 +94,12 @@ impl Table {
         self.draw_next_tile(self.banker);
     }
 
-    pub fn next_turn(&mut self) {
-        // TODO
-        // player draws
-        // player action (zimuo, angang)
-        // player discards
-        // other player actions (hu, pong, gang, chi)
-        // set next players turn
-        todo!();
-    }
+    // TODO
+    // player draws
+    // player action (zimuo, angang)
+    // player discards
+    // other player actions (hu, pong, gang, chi)
+    // set next players turn
 }
 
 #[derive(Debug, Default)]
@@ -110,4 +109,28 @@ enum Feng {
     South,
     West,
     North,
+}
+
+#[derive(Debug, Default)]
+enum GameState {
+    #[default]
+    CurrentPlayerDraw,
+    CurrentPlayerAction,
+    OtherPlayerAction,
+}
+
+type PlayerIndex = usize;
+
+#[derive(Debug)]
+struct PlayerAction {
+    player_index: usize,
+    action: Action,
+}
+
+#[derive(Debug, Error)]
+enum GameLoopError {
+    #[error("Player does not have required tiles to perform action: {action:?}")]
+    IllegalMoveError { action: String },
+    #[error("hi")]
+    InvalidMoveError,
 }
