@@ -133,3 +133,43 @@ pub enum IllegalAnGangError {
     #[error("Illegal to angang tile: {0:?}. An gang can only be performed on Wan, Suo, Tong, Feng, Dragon")]
     IllegalTileError(Tile),
 }
+
+#[cfg(test)]
+mod tests {
+    use claims::{assert_err, assert_ok};
+
+    use crate::mahjong::{
+        meld::{AnGang, Chi, Gang, Pong},
+        tile::{AnimalType, HuaType, Tile},
+    };
+
+    #[test]
+    fn test_create_chi() {
+        assert_err!(Chi::new(
+            Tile::Wan(1),
+            Tile::Wan(2),
+            Tile::Animal(AnimalType::Cat)
+        ));
+        assert_err!(Chi::new(Tile::Wan(1), Tile::Wan(2), Tile::Tong(3)));
+        assert_err!(Chi::new(Tile::Wan(1), Tile::Wan(2), Tile::Wan(4)));
+        assert_ok!(Chi::new(Tile::Wan(1), Tile::Wan(2), Tile::Wan(3)));
+    }
+
+    #[test]
+    fn test_create_pong() {
+        assert_err!(Pong::new(Tile::Hua(HuaType::RedOne)));
+        assert_ok!(Pong::new(Tile::Tong(1)));
+    }
+
+    #[test]
+    fn test_create_gang() {
+        assert_err!(Gang::new(Tile::Hua(HuaType::RedOne)));
+        assert_ok!(Gang::new(Tile::Tong(1)));
+    }
+
+    #[test]
+    fn test_create_angang() {
+        assert_err!(AnGang::new(Tile::Hua(HuaType::RedOne)));
+        assert_ok!(AnGang::new(Tile::Tong(1)));
+    }
+}
