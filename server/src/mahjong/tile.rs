@@ -1,6 +1,6 @@
 use std::fmt::format;
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Tile {
     Wan(i8),
     Suo(i8),
@@ -45,7 +45,7 @@ impl From<Tile> for i8 {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum FengType {
     East = 1,
     South = 2,
@@ -67,7 +67,7 @@ impl TryFrom<i8> for FengType {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum DragonType {
     Zhong = 1,
     Baiban = 2,
@@ -87,7 +87,7 @@ impl TryFrom<i8> for DragonType {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum HuaType {
     RedOne = 1,
     RedTwo = 2,
@@ -117,7 +117,7 @@ impl TryFrom<i8> for HuaType {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum AnimalType {
     Cat = 1,
     Rat = 2,

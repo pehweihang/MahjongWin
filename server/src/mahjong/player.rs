@@ -199,8 +199,21 @@ impl Player {
     /// # Arguments
     ///
     /// * `chi` - Set of tiles to perform chi on.
-    pub fn chi(&mut self, chi: &Chi) -> Result<(), IllegalMoveError> {
-        todo!()
+    pub fn chi(&mut self, chi: Chi) -> Result<(), IllegalMoveError> {
+        let tile_a: &Tile = chi.get_0();
+        let tile_b: &Tile = chi.get_1();
+        let tile_c: &Tile = chi.get_2();
+
+        if self.can_chi(tile_a, tile_b, tile_c) {
+            self.remove_tiles_from_hand(tile_a, 1)
+                .map_err(|_| IllegalMoveError(Action::Meld(Meld::Chi(chi))))?;
+            self.remove_tiles_from_hand(tile_b, 1)
+                .map_err(|_| IllegalMoveError(Action::Meld(Meld::Chi(chi))))?;
+            self.melds.push(Meld::Chi(chi));
+            Ok(())
+        } else {
+            Err(IllegalMoveError(Action::Meld(Meld::Chi(chi))))
+        }
     }
 
     /// Perform the action 'pong'. After 'pong' the player will meld the set of tiles 'pong' is
@@ -209,8 +222,17 @@ impl Player {
     /// # Arguments
     ///
     /// * `pong` - Set of tiles to perform 'pong' on.
-    pub fn pong(&mut self, pong: &Pong) -> Result<(), IllegalMoveError> {
-        todo!()
+    pub fn pong(&mut self, pong: Pong) -> Result<(), IllegalMoveError> {
+        let tile: &Tile = pong.get_0();
+
+        if self.can_pong(tile) {
+            self.remove_tiles_from_hand(tile, 2)
+                .map_err(|_| IllegalMoveError(Action::Meld(Meld::Pong(pong))))?;
+            self.melds.push(Meld::Pong(pong));
+            Ok(())
+        } else {
+            Err(IllegalMoveError(Action::Meld(Meld::Pong(pong))))
+        }
     }
 
     /// Perform the action 'gang'. After 'gang' the player will meld the set of tiles 'gang' is
@@ -219,8 +241,17 @@ impl Player {
     /// # Arguments
     ///
     /// * `gang` - Set of tiles to perform 'gang' on.
-    pub fn gang(&mut self, gang: &Gang) -> Result<(), IllegalMoveError> {
-        todo!()
+    pub fn gang(&mut self, gang: Gang) -> Result<(), IllegalMoveError> {
+        let tile: &Tile = gang.get_0();
+
+        if self.can_gang(tile) {
+            self.remove_tiles_from_hand(tile, 3)
+                .map_err(|_| IllegalMoveError(Action::Meld(Meld::Gang(gang))))?;
+            self.melds.push(Meld::Gang(gang));
+            Ok(())
+        } else {
+            Err(IllegalMoveError(Action::Meld(Meld::Gang(gang))))
+        }
     }
 
     /// Perform the action 'angang'. After 'angang' the player will meld the set of tiles 'angang'
@@ -229,8 +260,38 @@ impl Player {
     /// # Arguments
     ///
     /// * `gang` - Set of tiles to perform 'gang' on.
-    pub fn angang(&mut self, angang: &AnGang) -> Result<(), IllegalMoveError> {
-        todo!()
+    pub fn angang(&mut self, angang: AnGang) -> Result<(), IllegalMoveError> {
+        let tile: &Tile = angang.get_0();
+
+        if self.can_angang(tile) {
+            self.remove_tiles_from_hand(tile, 4)
+                .map_err(|_| IllegalMoveError(Action::Meld(Meld::AnGang(angang))))?;
+            self.melds.push(Meld::AnGang(angang));
+            Ok(())
+        } else {
+            Err(IllegalMoveError(Action::Meld(Meld::AnGang(angang))))
+        }
+    }
+
+    /// Utility function to remove tiles from player's hand
+    ///
+    /// # Arguments
+    ///
+    /// * `tile` - The tile to remove from player's hand
+    /// * `amount_to_remove` - The amount to remove of the specified tile
+    fn remove_tiles_from_hand(&mut self, tile: &Tile, amount_to_remove: u8) -> Result<(), String> {
+        if let Some(value) = self.hand.get_mut(tile) {
+            if *value >= amount_to_remove {
+                *value -= amount_to_remove;
+                Ok(())
+            } else {
+                // TODO implement error handling
+                Err("Not enough tiles".to_string())
+            }
+        } else {
+            // TODO implement error handling
+            Err("Not enough tiles".to_string())
+        }
     }
 }
 
@@ -538,10 +599,10 @@ mod tests {
             ..Default::default()
         };
         let chi_err = Chi::new(Tile::Wan(4), Tile::Wan(5), Tile::Wan(6)).unwrap();
-        assert_err!(player.chi(&chi_err));
+        assert_err!(player.chi(chi_err));
 
         let chi_ok = Chi::new(Tile::Wan(3), Tile::Wan(4), Tile::Wan(2)).unwrap();
-        assert_ok!(player.chi(&chi_ok));
+        assert_ok!(player.chi(chi_ok));
         assert!(player.melds.contains(&Meld::Chi(chi_ok)));
     }
 
@@ -554,10 +615,10 @@ mod tests {
         };
 
         let pong_err = Pong::new(Tile::Wan(2)).unwrap();
-        assert_err!(player.pong(&pong_err));
+        assert_err!(player.pong(pong_err));
 
         let pong_ok = Pong::new(Tile::Wan(1)).unwrap();
-        assert_ok!(player.pong(&pong_ok));
+        assert_ok!(player.pong(pong_ok));
         assert!(player.melds.contains(&Meld::Pong(pong_ok)));
     }
 
@@ -570,10 +631,10 @@ mod tests {
         };
 
         let gang_err = Gang::new(Tile::Wan(2)).unwrap();
-        assert_err!(player.gang(&gang_err));
+        assert_err!(player.gang(gang_err));
 
         let gang_ok = Gang::new(Tile::Wan(1)).unwrap();
-        assert_ok!(player.gang(&gang_ok));
+        assert_ok!(player.gang(gang_ok));
         assert!(player.melds.contains(&Meld::Gang(gang_ok)));
     }
 
@@ -586,11 +647,11 @@ mod tests {
         };
 
         let angang_err = AnGang::new(Tile::Wan(1)).unwrap();
-        assert_err!(player.angang(&angang_err));
+        assert_err!(player.angang(angang_err));
 
         player.draw(Tile::Wan(1));
         let angang_ok = AnGang::new(Tile::Wan(1)).unwrap();
-        assert_ok!(player.angang(&angang_ok));
+        assert_ok!(player.angang(angang_ok));
         assert!(player.melds.contains(&Meld::AnGang(angang_ok)));
     }
 }
