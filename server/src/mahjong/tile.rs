@@ -1,3 +1,5 @@
+use std::fmt::format;
+
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum Tile {
     Wan(i8),
@@ -135,12 +137,4 @@ impl TryFrom<i8> for AnimalType {
             invalid_value => Err(format!("Cannot convert {} into AnimalType", invalid_value)),
         }
     }
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum Meld {
-    Chi(Tile, Tile, Tile),
-    Pong(Tile),
-    Gang(Tile),
-    AnGang(Tile),
 }
