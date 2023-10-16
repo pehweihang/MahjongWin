@@ -205,8 +205,10 @@ impl Player {
         let tile_c: &Tile = chi.get_2();
 
         if self.can_chi(tile_a, tile_b, tile_c) {
-            self.remove_tiles_from_hand(tile_a, 1);
-            self.remove_tiles_from_hand(tile_b, 1);
+            self.remove_tiles_from_hand(tile_a, 1)
+                .map_err(|_| IllegalMoveError(Action::Meld(Meld::Chi(chi))))?;
+            self.remove_tiles_from_hand(tile_b, 1)
+                .map_err(|_| IllegalMoveError(Action::Meld(Meld::Chi(chi))))?;
             self.melds.push(Meld::Chi(chi));
             Ok(())
         } else {
@@ -224,7 +226,8 @@ impl Player {
         let tile: &Tile = pong.get_0();
 
         if self.can_pong(tile) {
-            self.remove_tiles_from_hand(tile, 2);
+            self.remove_tiles_from_hand(tile, 2)
+                .map_err(|_| IllegalMoveError(Action::Meld(Meld::Pong(pong))))?;
             self.melds.push(Meld::Pong(pong));
             Ok(())
         } else {
@@ -242,7 +245,8 @@ impl Player {
         let tile: &Tile = gang.get_0();
 
         if self.can_gang(tile) {
-            self.remove_tiles_from_hand(tile, 3);
+            self.remove_tiles_from_hand(tile, 3)
+                .map_err(|_| IllegalMoveError(Action::Meld(Meld::Gang(gang))))?;
             self.melds.push(Meld::Gang(gang));
             Ok(())
         } else {
@@ -260,7 +264,8 @@ impl Player {
         let tile: &Tile = angang.get_0();
 
         if self.can_angang(tile) {
-            self.remove_tiles_from_hand(tile, 4);
+            self.remove_tiles_from_hand(tile, 4)
+                .map_err(|_| IllegalMoveError(Action::Meld(Meld::AnGang(angang))))?;
             self.melds.push(Meld::AnGang(angang));
             Ok(())
         } else {
