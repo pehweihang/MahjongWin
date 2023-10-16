@@ -203,9 +203,8 @@ impl Player {
         let tile_a: &Tile = chi.get_0();
         let tile_b: &Tile = chi.get_1();
         let tile_c: &Tile = chi.get_2();
-        let possible_melds: Vec<Meld> = self.get_chi(tile_c);
 
-        if let true = possible_melds.contains(&Meld::Chi(*chi)) {
+        if self.can_chi(tile_a, tile_b, tile_c) {
             self.remove_tiles_from_hand(tile_a, 1);
             self.remove_tiles_from_hand(tile_b, 1);
             self.melds.push(Meld::Chi(*chi));
@@ -223,9 +222,8 @@ impl Player {
     /// * `pong` - Set of tiles to perform 'pong' on.
     pub fn pong(&mut self, pong: &Pong) -> Result<(), IllegalMoveError> {
         let tile: &Tile = pong.get_0();
-        let possible_melds: Vec<Meld> = self.get_pong(tile);
 
-        if let true = possible_melds.contains(&Meld::Pong(*pong)) {
+        if self.can_pong(tile) {
             self.remove_tiles_from_hand(tile, 2);
             self.melds.push(Meld::Pong(*pong));
             Ok(())
@@ -242,9 +240,8 @@ impl Player {
     /// * `gang` - Set of tiles to perform 'gang' on.
     pub fn gang(&mut self, gang: &Gang) -> Result<(), IllegalMoveError> {
         let tile: &Tile = gang.get_0();
-        let possible_melds: Vec<Meld> = self.get_gang(tile);
 
-        if let true = possible_melds.contains(&Meld::Gang(*gang)) {
+        if self.can_gang(tile) {
             self.remove_tiles_from_hand(tile, 3);
             self.melds.push(Meld::Gang(*gang));
             Ok(())
@@ -261,9 +258,8 @@ impl Player {
     /// * `gang` - Set of tiles to perform 'gang' on.
     pub fn angang(&mut self, angang: &AnGang) -> Result<(), IllegalMoveError> {
         let tile: &Tile = angang.get_0();
-        let possible_melds: Vec<Meld> = self.get_angang();
 
-        if let true = possible_melds.contains(&Meld::AnGang(*angang)) {
+        if self.can_angang(tile) {
             self.remove_tiles_from_hand(tile, 4);
             self.melds.push(Meld::AnGang(*angang));
             Ok(())
