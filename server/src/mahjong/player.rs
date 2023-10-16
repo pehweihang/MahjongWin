@@ -274,9 +274,18 @@ impl Player {
     ///
     /// * `tile` - The tile to remove from player's hand
     /// * `amount_to_remove` - The amount to remove of the specified tile
-    fn remove_tiles_from_hand(&mut self, tile: &Tile, amount_to_remove: u8) -> () {
+    fn remove_tiles_from_hand(&mut self, tile: &Tile, amount_to_remove: u8) -> Result<(), String> {
         if let Some(value) = self.hand.get_mut(tile) {
-            *value -= amount_to_remove;
+            if *value >= amount_to_remove {
+                *value -= amount_to_remove;
+                Ok(())
+            } else {
+                // TODO implement error handling
+                Err("Not enough tiles".to_string())
+            }
+        } else {
+            // TODO implement error handling
+            Err("Not enough tiles".to_string())
         }
     }
 }
