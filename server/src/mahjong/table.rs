@@ -2,8 +2,9 @@ use rand::seq::SliceRandom;
 use thiserror::Error;
 
 use super::{
+    meld::{AnGang, Meld},
     player::{Action, Player},
-    tile::{AnimalType, DragonType, FengType, HuaType, Tile}, meld::AnGang,
+    tile::{AnimalType, DragonType, FengType, HuaType, Tile},
 };
 
 #[derive(Debug, Default)]
@@ -127,19 +128,15 @@ impl Table {
     // player discards
     // other player actions (hu, pong, gang, chi)
     // set next players turn
-    pub fn current_player_action(&mut self, player_action: &PlayerAction) -> Result<(), GameLoopError> {
+    pub fn current_player_action(
+        &mut self,
+        player_action: &PlayerAction,
+    ) -> Result<(), GameLoopError> {
         if !matches!(self.round_state, RoundState::CurrentPlayerAction) {
             return Err(GameLoopError::InvalidStateError);
         }
-        match player_action.action {
-            Action::ZiMuo => todo!(),
-            Action::Meld(AnGang(t)) => {todo!()},
-            Action::None => {},
-            _ => {
-                
-            }
-        }
-
+        let action = &player_action.action;
+        todo!();
 
         Ok(())
     }
