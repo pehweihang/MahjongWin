@@ -4,7 +4,7 @@ use thiserror::Error;
 
 use super::tile::Tile;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Meld {
     Chi(Chi),
     Pong(Pong),
@@ -27,14 +27,14 @@ impl Chi {
     pub fn new(x: Tile, y: Tile, z: Tile) -> Result<Self, IllegalChiError> {
         for tile in [&x, &y, &z] {
             if !is_value_suit(tile) {
-                return Err(IllegalChiError::IllegalTileError(tile.clone()));
+                return Err(IllegalChiError::IllegalTileError(*tile));
             }
         }
         if !(discriminant(&x) == discriminant(&y) && discriminant(&x) == discriminant(&z)) {
             return Err(IllegalChiError::NotSameSuitError(x, y, z));
         }
 
-        let mut seq: [i8; 3] = [x.clone().into(), y.clone().into(), z.clone().into()];
+        let mut seq: [i8; 3] = [x.into(), y.into(), z.into()];
         seq.sort();
         if !(seq[0] == seq[1] - 1 && seq[0] == seq[2] - 2) {
             return Err(IllegalChiError::NotASequenceError(x, y, z));

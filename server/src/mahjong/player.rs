@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 
 use thiserror::Error;
 
@@ -13,7 +13,7 @@ pub struct IllegalMoveError(Action);
 
 #[derive(Debug, Default)]
 pub struct Player {
-    hand: HashMap<Tile, u8>,
+    hand: BTreeMap<Tile, u8>,
     flowers: Vec<Tile>,
     animals: Vec<Tile>,
     melds: Vec<Meld>,
@@ -38,16 +38,26 @@ impl Player {
     /// # Arguments
     ///
     /// * `tile` - drawn tile
-    pub fn draw(&mut self, tile: Tile) {
-        match self.hand.get(&tile) {
-            Some(count) => {
-                self.hand.insert(tile, count + 1);
-            }
-            None => {
-                self.hand.insert(tile, 1);
+    pub fn draw(&mut self, tile: &Tile) {
+        self.hand.entry(*tile).and_modify(|c| *c += 1).or_insert(1);
+        self.skipped_tiles.clear();
+    }
+
+    /// Discard a tile from the player's hand
+    ///
+    /// # Arguments
+    ///
+    /// *
+    /// `tile` tile to discard
+    pub fn discard(&mut self, tile: &Tile) -> Result<(), IllegalMoveError> {
+        if let Some(num) = self.hand.get_mut(tile) {
+            if *num > 0 {
+                *num -= 1;
+                clear_zero_keys(&mut self.hand);
+                return Ok(());
             }
         }
-        self.skipped_tiles.clear();
+        Err(IllegalMoveError(Action::Discard))
     }
 
     /// Keep track of tiles discarded by other players. The player cannot 'pong' or 'hu' from a
@@ -295,16 +305,95 @@ impl Player {
     }
 
     pub fn can_hu(&self, tile: &Tile) -> bool {
-        todo!()
+        let mut hand = self.hand.clone();
+        hand.entry(*tile).and_modify(|n| *n += 1).or_insert(1);
+        for t in self.hand.keys() {
+            let mut hand = hand.clone();
+            if let Some(x) = self.hand.get(t) {
+                if *x >= 2 {
+                    *hand.get_mut(t).unwrap() -= 2;
+                    check_can_meld_all(hand);
+                }
+            }
+        }
+        true
     }
 
     pub fn can_zimuo(&self) -> bool {
-        todo!()
+        for t in self.hand.keys() {
+            if let Some(x) = self.hand.get(t) {
+                if *x >= 2 {
+                    let mut hand = self.hand.clone();
+                    *hand.get_mut(t).unwrap() -= 2;
+                    check_can_meld_all(hand);
+                }
+            }
+        }
+        true
     }
+}
+
+/// Check if it is possible meld all tile in the hand
+///
+/// # Arguments
+///
+/// * `hand` - hand to check
+pub fn check_can_meld_all(hand: BTreeMap<Tile, u8>) -> Vec<Vec<Meld>> {
+    if hand.is_empty() {
+        return vec![vec![]];
+    }
+    let mut melds = vec![];
+    if let Some((t, num)) = hand.first_key_value() {
+        // can pong
+        if *num >= 3 {
+            let mut hand_next = hand.clone();
+            hand_next.entry(*t).and_modify(|n| *n -= 3);
+            clear_zero_keys(&mut hand_next);
+            let pong = Meld::Pong(Pong::new(*t).unwrap());
+            let mut other_melds = check_can_meld_all(hand_next);
+            other_melds.iter_mut().for_each(|m| m.push(pong.clone()));
+            melds.append(&mut other_melds);
+        }
+
+        // can chi
+        if !matches!(*t, Tile::Wan(_) | Tile::Suo(_) | Tile::Tong(_)) {
+            return melds;
+        }
+
+        let tile_int: i8 = (*t).into();
+        let next_tile = (tile_int + 1).try_into().unwrap();
+        let next_next_tile = (tile_int + 2).try_into().unwrap();
+        if let (Some(num_next), Some(num_next_next)) =
+            (hand.get(&next_tile), hand.get(&next_next_tile))
+        {
+            if *num_next > 0 && *num_next_next > 0 {
+                let mut hand_next = hand.clone();
+                hand_next.entry(*t).and_modify(|n| *n -= 1);
+                hand_next.entry(next_tile).and_modify(|n| *n -= 1);
+                hand_next.entry(next_next_tile).and_modify(|n| *n -= 1);
+                clear_zero_keys(&mut hand_next);
+                let chi = Meld::Chi(Chi::new(*t, next_tile, next_next_tile).unwrap());
+                let mut other_melds = check_can_meld_all(hand_next);
+                other_melds.iter_mut().for_each(|m| m.push(chi.clone()));
+                melds.append(&mut other_melds);
+            }
+        }
+    }
+    melds
+}
+
+/// Remove all keys with 0 value
+///
+/// # Arguments
+///
+/// * `map` map to remove keys from
+fn clear_zero_keys(map: &mut BTreeMap<Tile, u8>) {
+    map.retain(|_, v| *v > 0);
 }
 
 #[derive(Debug)]
 pub enum Action {
+    Discard,
     Hu,
     ZiMuo,
     Meld(Meld),
@@ -319,29 +408,37 @@ impl std::fmt::Display for Action {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::collections::BTreeMap;
 
     use claims::{assert_err, assert_ok};
 
     use crate::mahjong::{
         meld::{AnGang, Chi, Gang, Meld, Pong},
+        player::check_can_meld_all,
         tile::{DragonType, HuaType, Tile},
     };
 
-    use super::Player;
+    use super::{clear_zero_keys, Player};
+
+    #[test]
+    fn test_clear_zero_keys() {
+        let mut map = BTreeMap::from([(Tile::Wan(1), 0), (Tile::Wan(2), 1)]);
+        clear_zero_keys(&mut map);
+        assert_eq!(map, BTreeMap::from([(Tile::Wan(2), 1)]));
+    }
 
     #[test]
     fn test_draw_tile() {
         let mut player = Player {
             ..Default::default()
         };
-        player.draw(Tile::Wan(1));
-        assert_eq!(player.hand, HashMap::from([(Tile::Wan(1), 1)]));
+        player.draw(&Tile::Wan(1));
+        assert_eq!(player.hand, BTreeMap::from([(Tile::Wan(1), 1)]));
     }
 
     #[test]
     fn test_skipped_tile() {
-        let hand = HashMap::from([(Tile::Wan(2), 2)]);
+        let hand = BTreeMap::from([(Tile::Wan(2), 2)]);
         let mut player = Player {
             hand,
             ..Default::default()
@@ -359,7 +456,7 @@ mod tests {
 
     #[test]
     fn test_can_chi() {
-        let hand = HashMap::from([
+        let hand = BTreeMap::from([
             (Tile::Wan(1), 1),
             (Tile::Wan(2), 1),
             (Tile::Wan(8), 1),
@@ -397,7 +494,7 @@ mod tests {
 
     #[test]
     fn test_get_chi() {
-        let hand = HashMap::from([
+        let hand = BTreeMap::from([
             (Tile::Wan(1), 1),
             (Tile::Wan(2), 1),
             (Tile::Wan(8), 1),
@@ -456,7 +553,7 @@ mod tests {
 
     #[test]
     fn test_can_pong() {
-        let hand = HashMap::from([
+        let hand = BTreeMap::from([
             (Tile::Tong(1), 3),
             (Tile::Dragon(DragonType::Zhong), 2),
             (Tile::Suo(3), 1),
@@ -482,7 +579,7 @@ mod tests {
 
     #[test]
     fn test_get_pong() {
-        let hand_before_pong = HashMap::from([
+        let hand_before_pong = BTreeMap::from([
             (Tile::Tong(1), 3),
             (Tile::Dragon(DragonType::Zhong), 2),
             (Tile::Suo(2), 1),
@@ -516,7 +613,7 @@ mod tests {
 
     #[test]
     fn test_can_gang() {
-        let hand = HashMap::from([(Tile::Tong(1), 3), (Tile::Wan(2), 2), (Tile::Suo(3), 1)]);
+        let hand = BTreeMap::from([(Tile::Tong(1), 3), (Tile::Wan(2), 2), (Tile::Suo(3), 1)]);
 
         let player = Player {
             hand,
@@ -538,7 +635,7 @@ mod tests {
 
     #[test]
     fn test_get_gang() {
-        let hand = HashMap::from([(Tile::Tong(1), 3), (Tile::Wan(2), 2), (Tile::Suo(3), 1)]);
+        let hand = BTreeMap::from([(Tile::Tong(1), 3), (Tile::Wan(2), 2), (Tile::Suo(3), 1)]);
 
         let player = Player {
             hand,
@@ -563,7 +660,7 @@ mod tests {
 
     #[test]
     fn test_can_angang() {
-        let hand = HashMap::from([(Tile::Wan(2), 3), (Tile::Suo(3), 2)]);
+        let hand = BTreeMap::from([(Tile::Wan(2), 3), (Tile::Suo(3), 2)]);
 
         let mut player = Player {
             hand,
@@ -574,7 +671,7 @@ mod tests {
         assert!(!player.can_angang(&Tile::Wan(2)));
         assert!(!player.can_angang(&Tile::Suo(3)));
 
-        player.draw(Tile::Wan(2));
+        player.draw(&Tile::Wan(2));
 
         assert!(player.can_angang(&Tile::Wan(2)));
         assert!(!player.can_angang(&Tile::Suo(3)));
@@ -582,7 +679,7 @@ mod tests {
 
     #[test]
     fn test_get_angang() {
-        let hand = HashMap::from([(Tile::Wan(2), 3), (Tile::Suo(3), 2)]);
+        let hand = BTreeMap::from([(Tile::Wan(2), 3), (Tile::Suo(3), 2)]);
 
         let mut player = Player {
             hand,
@@ -592,7 +689,7 @@ mod tests {
         // get only angang with 4 identical tiles in hand
         assert_eq!(player.get_angang(), vec![]);
 
-        player.draw(Tile::Wan(2));
+        player.draw(&Tile::Wan(2));
 
         assert_eq!(
             player.get_angang(),
@@ -602,7 +699,7 @@ mod tests {
 
     #[test]
     fn test_chi() {
-        let hand = HashMap::from([(Tile::Wan(3), 1), (Tile::Wan(4), 1)]);
+        let hand = BTreeMap::from([(Tile::Wan(3), 1), (Tile::Wan(4), 1)]);
         let mut player = Player {
             hand,
             ..Default::default()
@@ -617,7 +714,7 @@ mod tests {
 
     #[test]
     fn test_pong() {
-        let hand = HashMap::from([(Tile::Wan(1), 2)]);
+        let hand = BTreeMap::from([(Tile::Wan(1), 2)]);
         let mut player = Player {
             hand,
             ..Default::default()
@@ -633,7 +730,7 @@ mod tests {
 
     #[test]
     fn test_gang() {
-        let hand = HashMap::from([(Tile::Wan(1), 3)]);
+        let hand = BTreeMap::from([(Tile::Wan(1), 3)]);
         let mut player = Player {
             hand,
             ..Default::default()
@@ -649,7 +746,7 @@ mod tests {
 
     #[test]
     fn test_angang() {
-        let hand = HashMap::from([(Tile::Wan(1), 3)]);
+        let hand = BTreeMap::from([(Tile::Wan(1), 3)]);
         let mut player = Player {
             hand,
             ..Default::default()
@@ -658,9 +755,21 @@ mod tests {
         let angang_err = AnGang::new(Tile::Wan(1)).unwrap();
         assert_err!(player.angang(angang_err));
 
-        player.draw(Tile::Wan(1));
+        player.draw(&Tile::Wan(1));
         let angang_ok = AnGang::new(Tile::Wan(1)).unwrap();
         assert_ok!(player.angang(angang_ok));
         assert!(player.melds.contains(&Meld::AnGang(angang_ok)));
+    }
+    #[test]
+    fn test_check_can_meld_all() {
+        let hand = BTreeMap::from([(Tile::Wan(1), 3), (Tile::Wan(2), 3), (Tile::Wan(3), 3)]);
+        let pong1 = Meld::Pong(Pong::new(Tile::Wan(1)).unwrap());
+        let pong2 = Meld::Pong(Pong::new(Tile::Wan(2)).unwrap());
+        let pong3 = Meld::Pong(Pong::new(Tile::Wan(3)).unwrap());
+        let chi = Meld::Chi(Chi::new(Tile::Wan(1), Tile::Wan(2), Tile::Wan(3)).unwrap());
+        assert_eq!(
+            check_can_meld_all(hand),
+            vec![vec![pong3, pong2, pong1], vec![chi, chi, chi]]
+        );
     }
 }

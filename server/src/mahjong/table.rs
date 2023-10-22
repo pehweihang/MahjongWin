@@ -2,7 +2,6 @@ use rand::seq::SliceRandom;
 use thiserror::Error;
 
 use super::{
-    meld::{AnGang, Meld},
     player::{Action, Player},
     tile::{AnimalType, DragonType, FengType, HuaType, Tile},
 };
@@ -72,7 +71,7 @@ impl Table {
 
     fn draw_next_tile(&mut self, player_number: usize) {
         // TODO error handling
-        self.players[player_number].draw(self.tiles.get(self.next_draw).unwrap().clone());
+        self.players[player_number].draw(&self.tiles.get(self.next_draw).unwrap().clone());
         self.next_draw += 1;
     }
 
