@@ -1,7 +1,10 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::{error::MahjongError, meld::Meld, tile::Tile};
-use anyhow::{Context, Result};
+use crate::{
+    error::MahjongError,
+    meld::{Meld, MeldType},
+    tile::Tile,
+};
 
 #[derive(Debug, Default)]
 pub struct Hand {
@@ -26,7 +29,7 @@ impl Hand {
         self.seen_tiles.clear();
     }
 
-    pub fn discard(&mut self, tile: &Tile) -> Result<()> {
+    pub fn discard(&mut self, tile: &Tile) -> Result<(), MahjongError> {
         if let Some(v) = self.hand.get(tile) {
             if *v == 1 {
                 self.hand.remove(tile);
@@ -34,11 +37,53 @@ impl Hand {
                 self.hand.insert(tile.to_owned(), *v - 1);
             }
         } else {
-            return Err(MahjongError::TileNotFoundError(tile.to_owned()))
-                .context("Cannot discard tile not in hand");
+            return Err(MahjongError::TileNotFoundError(tile.to_owned()));
         }
         self.seen_tiles.insert(tile.to_owned());
         Ok(())
+    }
+
+    pub fn get_melds(&self, tile: &Tile) -> Result<Vec<Meld>, MahjongError> {
+        if !tile.is_playable() {
+            return Err(MahjongError::TileNotPlayableError(tile.suit()));
+        }
+        let mut poss_melds = vec![];
+        if let Some(num) = self.hand.get(tile) {
+            if *num >= 2 {
+                poss_melds.push(Meld::new(
+                    vec![tile.to_owned(), tile.to_owned(), tile.to_owned()],
+                    MeldType::Pong,
+                )?);
+            }
+            if *num >= 3 {
+                poss_melds.push(Meld::new(
+                    vec![
+                        tile.to_owned(),
+                        tile.to_owned(),
+                        tile.to_owned(),
+                        tile.to_owned(),
+                    ],
+                    MeldType::Gang,
+                )?);
+            }
+        }
+        let prev = tile.prev();
+        let prev_prev = prev.and_then(|t| t.prev());
+        let next = tile.next();
+        let next_next = next.and_then(|t| t.next());
+
+        let tiles_to_check = [prev_prev, prev, next, next_next];
+        let mut it = tiles_to_check.windows(2);
+        while let Some([t1, t2]) = it.next() {
+            if let (Some(t1), Some(t2)) = (t1, t2) {
+                let mut tiles = vec![t1.to_owned(), t2.to_owned(), tile.to_owned()];
+                tiles.sort();
+                if self.hand.contains_key(t1) && self.hand.contains_key(t2) {
+                    poss_melds.push(Meld::new(tiles, MeldType::Chi)?);
+                }
+            }
+        }
+        Ok(poss_melds)
     }
 }
 
@@ -48,7 +93,10 @@ mod tests {
 
     use claim::assert_err;
 
-    use crate::tile::{Tile, TileValue};
+    use crate::{
+        meld::{Meld, MeldType},
+        tile::{Tile, TileValue},
+    };
 
     use super::Hand;
 
@@ -92,5 +140,66 @@ mod tests {
         hand.draw(&Tile::Wan(TileValue::One));
         hand.discard(&Tile::Wan(TileValue::One)).unwrap();
         assert!(hand.seen_tiles.contains(&Tile::Wan(TileValue::One)));
+    }
+
+    #[test]
+    fn test_get_melds() {
+        let mut hand = Hand::new();
+        hand.draw(&Tile::Wan(TileValue::Two));
+        hand.draw(&Tile::Wan(TileValue::Three));
+        hand.draw(&Tile::Wan(TileValue::Four));
+        hand.draw(&Tile::Wan(TileValue::Four));
+        hand.draw(&Tile::Wan(TileValue::Four));
+        hand.draw(&Tile::Wan(TileValue::Five));
+        hand.draw(&Tile::Wan(TileValue::Six));
+
+        let mut melds = hand.get_melds(&Tile::Wan(TileValue::Four)).unwrap();
+        melds.sort();
+
+        let mut correct_melds = vec![
+            Meld::new(
+                vec![
+                    Tile::Wan(TileValue::Two),
+                    Tile::Wan(TileValue::Three),
+                    Tile::Wan(TileValue::Four),
+                ],
+                MeldType::Chi,
+            ).unwrap(),
+            Meld::new(
+                vec![
+                    Tile::Wan(TileValue::Three),
+                    Tile::Wan(TileValue::Four),
+                    Tile::Wan(TileValue::Five),
+                ],
+                MeldType::Chi,
+            ).unwrap(),
+            Meld::new(
+                vec![
+                    Tile::Wan(TileValue::Four),
+                    Tile::Wan(TileValue::Five),
+                    Tile::Wan(TileValue::Six),
+                ],
+                MeldType::Chi,
+            ).unwrap(),
+            Meld::new(
+                vec![
+                    Tile::Wan(TileValue::Four),
+                    Tile::Wan(TileValue::Four),
+                    Tile::Wan(TileValue::Four),
+                ],
+                MeldType::Pong,
+            ).unwrap(),
+            Meld::new(
+                vec![
+                    Tile::Wan(TileValue::Four),
+                    Tile::Wan(TileValue::Four),
+                    Tile::Wan(TileValue::Four),
+                    Tile::Wan(TileValue::Four),
+                ],
+                MeldType::Gang,
+            ).unwrap(),
+        ];
+        correct_melds.sort();
+        assert_eq!(melds, correct_melds);
     }
 }
