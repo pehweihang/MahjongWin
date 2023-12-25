@@ -59,6 +59,17 @@ pub enum FlowerValue {
     Four,
 }
 
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Suit {
+    Wan,
+    Suo,
+    Tong,
+    Wind,
+    Dragon,
+    Animal,
+    Flower,
+}
+
 impl Tile {
     pub fn next(&self) -> Option<Tile> {
         match self {
@@ -75,6 +86,18 @@ impl Tile {
             Tile::Suo(val) => Some(Tile::Suo(val.prev()?)),
             Tile::Tong(val) => Some(Tile::Tong(val.prev()?)),
             _ => None,
+        }
+    }
+
+    pub fn suit(&self) -> Suit {
+        match self {
+            Tile::Wan(_) => Suit::Wan,
+            Tile::Suo(_) => Suit::Suo,
+            Tile::Tong(_) => Suit::Tong,
+            Tile::Wind(_) => Suit::Wind,
+            Tile::Dragon(_) => Suit::Dragon,
+            Tile::Animal(_) => Suit::Animal,
+            Tile::Flower(_) => Suit::Flower,
         }
     }
 }
@@ -150,5 +173,4 @@ mod tests {
         let tile = Tile::Wind(Wind::East);
         assert_eq!(tile.prev(), None);
     }
-
 }
