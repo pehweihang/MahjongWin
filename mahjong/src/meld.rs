@@ -1,5 +1,6 @@
 use crate::tile::{Suit, Tile};
 
+#[derive(Debug)]
 pub struct Meld {
     pub tiles: Vec<Tile>,
     pub meld_type: MeldType,
@@ -57,6 +58,7 @@ impl Meld {
     }
 }
 
+#[derive(Debug)]
 pub enum MeldType {
     Chi,
     Pong,
