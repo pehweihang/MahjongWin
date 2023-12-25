@@ -100,6 +100,10 @@ impl Tile {
             Tile::Flower(_) => Suit::Flower,
         }
     }
+
+    pub fn is_playable(&self) -> bool {
+        !matches!(self, Tile::Animal(_) | Tile::Flower(_))
+    }
 }
 
 impl TileValue {
