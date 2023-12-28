@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::tile::{Tile, Suit};
+use crate::{tile::{Tile, Suit}, meld::MeldType};
 
 #[derive(Error, Debug)]
 pub enum MahjongError {
@@ -8,6 +8,6 @@ pub enum MahjongError {
     TileNotFoundError(Tile),
     #[error("Tile with suit {0:?} is not playable")]
     TileNotPlayableError(Suit),
-    #[error("Cannot create meld from {0:?}")]
-    InvalidMeldError(Vec<Tile>)
+    #[error("Cannot create meld type {0:?} from {1:?} and {2:?}")]
+    InvalidMeldError(MeldType, Vec<Tile>, Option<Tile>)
 }

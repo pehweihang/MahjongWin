@@ -51,18 +51,15 @@ impl Hand {
         if let Some(num) = self.hand.get(tile) {
             if *num >= 2 {
                 poss_melds.push(Meld::new(
-                    vec![tile.to_owned(), tile.to_owned(), tile.to_owned()],
+                    vec![tile.to_owned(), tile.to_owned()],
+                    Some(tile.to_owned()),
                     MeldType::Pong,
                 )?);
             }
             if *num >= 3 {
                 poss_melds.push(Meld::new(
-                    vec![
-                        tile.to_owned(),
-                        tile.to_owned(),
-                        tile.to_owned(),
-                        tile.to_owned(),
-                    ],
+                    vec![tile.to_owned(), tile.to_owned(), tile.to_owned()],
+                    Some(tile.to_owned()),
                     MeldType::Gang,
                 )?);
             }
@@ -79,12 +76,18 @@ impl Hand {
                 let mut tiles = vec![t1.to_owned(), t2.to_owned(), tile.to_owned()];
                 tiles.sort();
                 if self.hand.contains_key(t1) && self.hand.contains_key(t2) {
-                    poss_melds.push(Meld::new(tiles, MeldType::Chi)?);
+                    poss_melds.push(Meld::new(
+                        vec![t1.to_owned(), t2.to_owned()],
+                        Some(tile.to_owned()),
+                        MeldType::Chi,
+                    )?);
                 }
             }
         }
         Ok(poss_melds)
     }
+
+    pub fn meld(&self, meld: Meld) {}
 }
 
 #[cfg(test)]
@@ -158,46 +161,39 @@ mod tests {
 
         let mut correct_melds = vec![
             Meld::new(
-                vec![
-                    Tile::Wan(TileValue::Two),
-                    Tile::Wan(TileValue::Three),
-                    Tile::Wan(TileValue::Four),
-                ],
+                vec![Tile::Wan(TileValue::Two), Tile::Wan(TileValue::Three)],
+                Some(Tile::Wan(TileValue::Four)),
                 MeldType::Chi,
-            ).unwrap(),
+            )
+            .unwrap(),
             Meld::new(
-                vec![
-                    Tile::Wan(TileValue::Three),
-                    Tile::Wan(TileValue::Four),
-                    Tile::Wan(TileValue::Five),
-                ],
+                vec![Tile::Wan(TileValue::Three), Tile::Wan(TileValue::Five)],
+                Some(Tile::Wan(TileValue::Four)),
                 MeldType::Chi,
-            ).unwrap(),
+            )
+            .unwrap(),
             Meld::new(
-                vec![
-                    Tile::Wan(TileValue::Four),
-                    Tile::Wan(TileValue::Five),
-                    Tile::Wan(TileValue::Six),
-                ],
+                vec![Tile::Wan(TileValue::Five), Tile::Wan(TileValue::Six)],
+                Some(Tile::Wan(TileValue::Four)),
                 MeldType::Chi,
-            ).unwrap(),
+            )
+            .unwrap(),
             Meld::new(
-                vec![
-                    Tile::Wan(TileValue::Four),
-                    Tile::Wan(TileValue::Four),
-                    Tile::Wan(TileValue::Four),
-                ],
+                vec![Tile::Wan(TileValue::Four), Tile::Wan(TileValue::Four)],
+                Some(Tile::Wan(TileValue::Four)),
                 MeldType::Pong,
-            ).unwrap(),
+            )
+            .unwrap(),
             Meld::new(
                 vec![
                     Tile::Wan(TileValue::Four),
                     Tile::Wan(TileValue::Four),
                     Tile::Wan(TileValue::Four),
-                    Tile::Wan(TileValue::Four),
                 ],
+                Some(Tile::Wan(TileValue::Four)),
                 MeldType::Gang,
-            ).unwrap(),
+            )
+            .unwrap(),
         ];
         correct_melds.sort();
         assert_eq!(melds, correct_melds);
