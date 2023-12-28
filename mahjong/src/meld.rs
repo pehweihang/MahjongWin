@@ -33,73 +33,54 @@ impl Meld {
                 discarded_tile,
             ));
         }
+        let mut all_tiles = tiles.clone();
+        if let Some(discarded) = discarded_tile {
+            all_tiles.push(discarded)
+        }
+        all_tiles.sort();
 
-        match discarded_tile {
-            Some(discarded_tile) => {
-                let mut all_tiles = tiles.clone();
-                all_tiles.push(discarded_tile);
-                all_tiles.sort();
-                match meld_type {
-                    MeldType::Chi => {
-                        if all_tiles.len() != 3
-                            || !all_tiles.windows(2).all(|w| match w[0].next() {
-                                Some(t) => t == w[1],
-                                None => false,
-                            })
-                        {
-                            return Err(MahjongError::InvalidMeldError(
-                                meld_type,
-                                tiles,
-                                Some(discarded_tile),
-                            ));
-                        }
-                    }
-                    MeldType::Pong => {
-                        if all_tiles.len() != 3 || !all_tiles.windows(2).all(|w| w[0] == w[1]) {
-                            return Err(MahjongError::InvalidMeldError(
-                                meld_type,
-                                tiles,
-                                Some(discarded_tile),
-                            ));
-                        }
-                    }
-                    MeldType::Gang => {
-                        if all_tiles.len() != 4 || !all_tiles.windows(2).all(|w| w[0] == w[1]) {
-                            return Err(MahjongError::InvalidMeldError(
-                                meld_type,
-                                tiles,
-                                Some(discarded_tile),
-                            ));
-                        }
-                    }
-                    _ => {
-                        return Err(MahjongError::InvalidMeldError(
-                            meld_type,
-                            tiles,
-                            Some(discarded_tile),
-                        ));
-                    }
-                }
-            }
-            None => match meld_type {
-                MeldType::Eye => {
-                    if tiles.len() != 2 || tiles[0] != tiles[1] {
-                        return Err(MahjongError::InvalidMeldError(
-                            meld_type,
-                            tiles,
-                            discarded_tile,
-                        ));
-                    }
-                }
-                MeldType::AnGang => {}
-                _ => {
+        match meld_type {
+            MeldType::Chi => {
+                if all_tiles.len() != 3
+                    || !all_tiles.windows(2).all(|w| match w[0].next() {
+                        Some(t) => t == w[1],
+                        None => false,
+                    })
+                {
                     return Err(MahjongError::InvalidMeldError(
                         meld_type,
                         tiles,
                         discarded_tile,
                     ));
                 }
-            },
+            }
+            MeldType::Pong => {
+                if all_tiles.len() != 3 || !all_tiles.windows(2).all(|w| w[0] == w[1]) {
+                    return Err(MahjongError::InvalidMeldError(
+                        meld_type,
+                        tiles,
+                        discarded_tile,
+                    ));
+                }
+            }
+            MeldType::Gang | MeldType::AnGang => {
+                if all_tiles.len() != 4 || !all_tiles.windows(2).all(|w| w[0] == w[1]) {
+                    return Err(MahjongError::InvalidMeldError(
+                        meld_type,
+                        tiles,
+                        discarded_tile,
+                    ));
+                }
+            }
+            MeldType::Eye => {
+                if tiles.len() != 2 || tiles[0] != tiles[1] {
+                    return Err(MahjongError::InvalidMeldError(
+                        meld_type,
+                        tiles,
+                        discarded_tile,
+                    ));
+                }
+            }
         }
 
         Ok(Self {
