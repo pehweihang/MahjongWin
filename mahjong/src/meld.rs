@@ -3,7 +3,7 @@ use crate::{
     tile::{Suit, Tile},
 };
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Meld {
     tiles: Vec<Tile>,
     discarded_tile: Option<Tile>,
@@ -108,6 +108,10 @@ impl Meld {
             meld_type,
             suit,
         })
+    }
+
+    pub fn tiles(&self) -> &Vec<Tile> {
+        &self.tiles
     }
 }
 

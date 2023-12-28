@@ -9,7 +9,7 @@ use crate::{
 #[derive(Debug, Default)]
 pub struct Hand {
     hand: HashMap<Tile, u8>,
-    _melds: Vec<Meld>,
+    melds: Vec<Meld>,
     _bonus_tiles: HashSet<Tile>,
     seen_tiles: HashSet<Tile>,
 }
@@ -37,7 +37,7 @@ impl Hand {
                 self.hand.insert(tile.to_owned(), *v - 1);
             }
         } else {
-            return Err(MahjongError::TileNotFoundError(tile.to_owned()));
+            return Err(MahjongError::TileNotInHandFoundError(tile.to_owned()));
         }
         self.seen_tiles.insert(tile.to_owned());
         Ok(())
@@ -73,7 +73,7 @@ impl Hand {
         let mut it = tiles_to_check.windows(2);
         while let Some([t1, t2]) = it.next() {
             if let (Some(t1), Some(t2)) = (t1, t2) {
-                let mut tiles = vec![t1.to_owned(), t2.to_owned(), tile.to_owned()];
+                let mut tiles = [t1.to_owned(), t2.to_owned(), tile.to_owned()];
                 tiles.sort();
                 if self.hand.contains_key(t1) && self.hand.contains_key(t2) {
                     poss_melds.push(Meld::new(
@@ -87,14 +87,36 @@ impl Hand {
         Ok(poss_melds)
     }
 
-    pub fn meld(&self, meld: Meld) {}
+    pub fn meld(&mut self, meld: Meld) -> Result<(), MahjongError> {
+        let mut map = HashMap::new();
+        for tile in meld.tiles() {
+            *map.entry(tile.to_owned()).or_insert(0_u8) += 1;
+        }
+        for (tile, count) in map {
+            match self.hand.get_mut(&tile) {
+                Some(c) => {
+                    if *c >= count {
+                        *c -= count;
+                    } else {
+                        return Err(MahjongError::TileNotInHandFoundError(tile));
+                    }
+                    if *c == 0{
+                        self.hand.remove(&tile);
+                    }
+                }
+                None => return Err(MahjongError::TileNotInHandFoundError(tile)),
+            }
+        }
+        self.melds.push(meld);
+        Ok(())
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
 
-    use claim::assert_err;
+    use claim::{assert_err, assert_ok_eq};
 
     use crate::{
         meld::{Meld, MeldType},
@@ -197,5 +219,34 @@ mod tests {
         ];
         correct_melds.sort();
         assert_eq!(melds, correct_melds);
+    }
+
+    #[test]
+    fn test_meld_ok() {
+        let mut hand = Hand::new();
+        hand.draw(&Tile::Wan(TileValue::Two));
+        hand.draw(&Tile::Wan(TileValue::Three));
+        let meld = Meld::new(
+            vec![Tile::Wan(TileValue::Two), Tile::Wan(TileValue::Three)],
+            Some(Tile::Wan(TileValue::Four)),
+            MeldType::Chi,
+        ).unwrap();
+
+        assert_ok_eq!(hand.meld(meld.clone()), ());
+        assert_eq!(hand.melds, vec![meld]);
+        assert_eq!(hand.hand, HashMap::from([]));
+    }
+
+    #[test]
+    fn test_meld_fail() {
+        let mut hand = Hand::new();
+        let meld = Meld::new(
+            vec![Tile::Wan(TileValue::Two), Tile::Wan(TileValue::Three)],
+            Some(Tile::Wan(TileValue::Four)),
+            MeldType::Chi,
+        ).unwrap();
+
+        assert_err!(hand.meld(meld.clone()));
+
     }
 }
