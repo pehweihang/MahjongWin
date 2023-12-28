@@ -6,9 +6,49 @@ use crate::{
     tile::Tile,
 };
 
+#[derive(Debug, Default, Clone)]
+pub struct HandTiles(HashMap<Tile, u8>);
+
+impl std::ops::Deref for HandTiles {
+    type Target = HashMap<Tile, u8>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for HandTiles {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl HandTiles {
+    pub fn remove_n(&mut self, tile: &Tile, n: u8) -> Result<(), MahjongError> {
+        match self.get_mut(tile) {
+            Some(c) => {
+                if *c > n {
+                    *c -= n;
+                    Ok(())
+                } else if *c == n {
+                    self.remove(tile);
+                    Ok(())
+                } else {
+                    Err(MahjongError::TileNotInHandFoundError(tile.clone()))
+                }
+            }
+            None => Err(MahjongError::TileNotInHandFoundError(tile.clone())),
+        }
+    }
+
+    pub fn add_n(&mut self, tile: &Tile, n: u8) {
+        *self.entry(*tile).or_insert(0) += n;
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct Hand {
-    hand: HashMap<Tile, u8>,
+    hand: HandTiles,
     melds: Vec<Meld>,
     _bonus_tiles: HashSet<Tile>,
     seen_tiles: HashSet<Tile>,
@@ -30,15 +70,7 @@ impl Hand {
     }
 
     pub fn discard(&mut self, tile: &Tile) -> Result<(), MahjongError> {
-        if let Some(v) = self.hand.get(tile) {
-            if *v == 1 {
-                self.hand.remove(tile);
-            } else {
-                self.hand.insert(tile.to_owned(), *v - 1);
-            }
-        } else {
-            return Err(MahjongError::TileNotInHandFoundError(tile.to_owned()));
-        }
+        self.hand.remove_n(tile, 1)?;
         self.seen_tiles.insert(tile.to_owned());
         Ok(())
     }
@@ -88,24 +120,14 @@ impl Hand {
     }
 
     pub fn meld(&mut self, meld: Meld) -> Result<(), MahjongError> {
-        let mut map = HashMap::new();
+        let mut map = HandTiles {
+            ..Default::default()
+        };
         for tile in meld.tiles() {
             *map.entry(tile.to_owned()).or_insert(0_u8) += 1;
         }
-        for (tile, count) in map {
-            match self.hand.get_mut(&tile) {
-                Some(c) => {
-                    if *c >= count {
-                        *c -= count;
-                    } else {
-                        return Err(MahjongError::TileNotInHandFoundError(tile));
-                    }
-                    if *c == 0 {
-                        self.hand.remove(&tile);
-                    }
-                }
-                None => return Err(MahjongError::TileNotInHandFoundError(tile)),
-            }
+        for (tile, count) in map.iter() {
+            self.hand.remove_n(tile, *count)?;
         }
         self.melds.push(meld);
         Ok(())
@@ -151,9 +173,13 @@ mod tests {
     fn test_draw_tile_ok() {
         let mut hand = Hand::new();
         hand.draw(&Tile::Wan(TileValue::One));
-        assert_eq!(hand.hand, HashMap::from([(Tile::Wan(TileValue::One), 1)]));
+        assert!(hand
+            .hand
+            .eq(&HashMap::from([(Tile::Wan(TileValue::One), 1)])));
         hand.draw(&Tile::Wan(TileValue::One));
-        assert_eq!(hand.hand, HashMap::from([(Tile::Wan(TileValue::One), 2)]));
+        assert!(hand
+            .hand
+            .eq(&HashMap::from([(Tile::Wan(TileValue::One), 2)])));
     }
 
     #[test]
@@ -170,9 +196,9 @@ mod tests {
         hand.draw(&Tile::Wan(TileValue::One));
         hand.draw(&Tile::Wan(TileValue::One));
         hand.discard(&Tile::Wan(TileValue::One)).unwrap();
-        assert_eq!(hand.hand, HashMap::from([(Tile::Wan(TileValue::One), 1)]));
+        assert_eq!(hand.hand.0, HashMap::from([(Tile::Wan(TileValue::One), 1)]));
         hand.discard(&Tile::Wan(TileValue::One)).unwrap();
-        assert_eq!(hand.hand, HashMap::from([]));
+        assert!(hand.hand.eq(&HashMap::from([])));
     }
 
     #[test]
@@ -257,7 +283,7 @@ mod tests {
 
         assert_ok_eq!(hand.meld(meld.clone()), ());
         assert_eq!(hand.melds, vec![meld]);
-        assert_eq!(hand.hand, HashMap::from([]));
+        assert!(hand.hand.eq(&HashMap::from([])));
     }
 
     #[test]
