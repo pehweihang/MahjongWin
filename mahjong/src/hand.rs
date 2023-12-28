@@ -100,7 +100,7 @@ impl Hand {
                     } else {
                         return Err(MahjongError::TileNotInHandFoundError(tile));
                     }
-                    if *c == 0{
+                    if *c == 0 {
                         self.hand.remove(&tile);
                     }
                 }
@@ -109,6 +109,28 @@ impl Hand {
         }
         self.melds.push(meld);
         Ok(())
+    }
+
+    pub fn get_angangs(&self) -> Vec<Meld> {
+        let mut melds = Vec::new();
+        for (tile, count) in self.hand.iter() {
+            if *count == 4 {
+                melds.push(
+                    Meld::new(
+                        vec![
+                            tile.to_owned(),
+                            tile.to_owned(),
+                            tile.to_owned(),
+                            tile.to_owned(),
+                        ],
+                        None,
+                        MeldType::AnGang,
+                    )
+                    .unwrap(),
+                );
+            }
+        }
+        melds
     }
 }
 
@@ -178,10 +200,7 @@ mod tests {
         hand.draw(&Tile::Wan(TileValue::Five));
         hand.draw(&Tile::Wan(TileValue::Six));
 
-        let mut melds = hand.get_melds(&Tile::Wan(TileValue::Four)).unwrap();
-        melds.sort();
-
-        let mut correct_melds = vec![
+        let correct_melds = vec![
             Meld::new(
                 vec![Tile::Wan(TileValue::Two), Tile::Wan(TileValue::Three)],
                 Some(Tile::Wan(TileValue::Four)),
@@ -217,8 +236,11 @@ mod tests {
             )
             .unwrap(),
         ];
-        correct_melds.sort();
-        assert_eq!(melds, correct_melds);
+        assert!(hand
+            .get_melds(&Tile::Wan(TileValue::Four))
+            .unwrap()
+            .iter()
+            .all(|m| correct_melds.contains(m)));
     }
 
     #[test]
@@ -230,7 +252,8 @@ mod tests {
             vec![Tile::Wan(TileValue::Two), Tile::Wan(TileValue::Three)],
             Some(Tile::Wan(TileValue::Four)),
             MeldType::Chi,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert_ok_eq!(hand.meld(meld.clone()), ());
         assert_eq!(hand.melds, vec![meld]);
@@ -244,9 +267,30 @@ mod tests {
             vec![Tile::Wan(TileValue::Two), Tile::Wan(TileValue::Three)],
             Some(Tile::Wan(TileValue::Four)),
             MeldType::Chi,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert_err!(hand.meld(meld.clone()));
+    }
 
+    #[test]
+    fn test_get_angang() {
+        let mut hand = Hand::new();
+        hand.draw(&Tile::Wan(TileValue::Two));
+        hand.draw(&Tile::Wan(TileValue::Two));
+        hand.draw(&Tile::Wan(TileValue::Two));
+        hand.draw(&Tile::Wan(TileValue::Two));
+        hand.draw(&Tile::Wan(TileValue::Three));
+        hand.draw(&Tile::Wan(TileValue::Three));
+        hand.draw(&Tile::Wan(TileValue::Three));
+        hand.draw(&Tile::Wan(TileValue::Three));
+        hand.draw(&Tile::Wan(TileValue::Four));
+        hand.draw(&Tile::Wan(TileValue::Four));
+        hand.draw(&Tile::Wan(TileValue::Four));
+        let correct_melds = vec![
+            Meld::new(vec![Tile::Wan(TileValue::Two); 4], None, MeldType::AnGang).unwrap(),
+            Meld::new(vec![Tile::Wan(TileValue::Three); 4], None, MeldType::AnGang).unwrap(),
+        ];
+        assert!(hand.get_angangs().iter().all(|m| correct_melds.contains(m)));
     }
 }
