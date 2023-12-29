@@ -26,18 +26,16 @@ impl std::ops::DerefMut for HandTiles {
 impl HandTiles {
     pub fn remove_n(&mut self, tile: &Tile, n: u8) -> Result<(), MahjongError> {
         match self.get_mut(tile) {
-            Some(c) => {
-                if *c > n {
-                    *c -= n;
-                    Ok(())
-                } else if *c == n {
-                    self.remove(tile);
-                    Ok(())
-                } else {
-                    Err(MahjongError::TileNotInHandFoundError(tile.clone()))
-                }
+            Some(c) if *c > n => {
+                *c -= n;
+                Ok(())
             }
-            None => Err(MahjongError::TileNotInHandFoundError(tile.clone())),
+            Some(c) if *c == n => {
+                self.remove(tile);
+                Ok(())
+            }
+            Some(_) => Err(MahjongError::TileNotInHandFoundError(*tile)),
+            None => Err(MahjongError::TileNotInHandFoundError(*tile)),
         }
     }
 
