@@ -48,7 +48,7 @@ impl HandTiles {
 pub struct Hand {
     hand: HandTiles,
     melds: Vec<Meld>,
-    _bonus_tiles: HashSet<Tile>,
+    bonus_tiles: HashSet<Tile>,
     seen_tiles: HashSet<Tile>,
 }
 
@@ -60,10 +60,14 @@ impl Hand {
     }
 
     pub fn draw(&mut self, tile: &Tile) {
-        self.hand
-            .entry(tile.to_owned())
-            .and_modify(|c| *c += 1)
-            .or_insert(1);
+        match tile.is_playable() {
+            true => {
+                self.hand.add_n(tile, 1);
+            }
+            false => {
+                self.bonus_tiles.insert(*tile);
+            }
+        };
         self.seen_tiles.clear();
     }
 
