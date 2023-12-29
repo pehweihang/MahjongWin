@@ -158,7 +158,7 @@ impl Hand {
         melds
     }
 
-    pub fn hand(&self) -> &ConcealedTiles {
+    pub fn concealed(&self) -> &ConcealedTiles {
         &self.concealed
     }
 }
