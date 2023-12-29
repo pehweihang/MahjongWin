@@ -17,21 +17,15 @@ impl std::ops::Deref for ConcealedTiles {
     }
 }
 
-impl std::ops::DerefMut for ConcealedTiles {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
 impl ConcealedTiles {
     pub fn remove_n(&mut self, tile: &Tile, n: u8) -> Result<(), MahjongError> {
-        match self.get_mut(tile) {
+        match self.0.get_mut(tile) {
             Some(c) if *c > n => {
                 *c -= n;
                 Ok(())
             }
             Some(c) if *c == n => {
-                self.remove(tile);
+                self.0.remove(tile);
                 Ok(())
             }
             Some(_) => Err(MahjongError::TileNotInHandFoundError(*tile)),
@@ -40,9 +34,8 @@ impl ConcealedTiles {
     }
 
     pub fn add_n(&mut self, tile: &Tile, n: u8) {
-        *self.entry(*tile).or_insert(0) += n;
+        *self.0.entry(*tile).or_insert(0) += n;
     }
-
 }
 
 #[derive(Debug, Default)]
