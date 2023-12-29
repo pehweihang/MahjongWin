@@ -7,9 +7,9 @@ use crate::{
 };
 
 #[derive(Debug, Default, Clone)]
-pub struct HandTiles(HashMap<Tile, u8>);
+pub struct ConcealedTiles(HashMap<Tile, u8>);
 
-impl std::ops::Deref for HandTiles {
+impl std::ops::Deref for ConcealedTiles {
     type Target = HashMap<Tile, u8>;
 
     fn deref(&self) -> &Self::Target {
@@ -17,13 +17,13 @@ impl std::ops::Deref for HandTiles {
     }
 }
 
-impl std::ops::DerefMut for HandTiles {
+impl std::ops::DerefMut for ConcealedTiles {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
 
-impl HandTiles {
+impl ConcealedTiles {
     pub fn remove_n(&mut self, tile: &Tile, n: u8) -> Result<(), MahjongError> {
         match self.get_mut(tile) {
             Some(c) if *c > n => {
@@ -42,14 +42,15 @@ impl HandTiles {
     pub fn add_n(&mut self, tile: &Tile, n: u8) {
         *self.entry(*tile).or_insert(0) += n;
     }
+
 }
 
 #[derive(Debug, Default)]
 pub struct Hand {
-    hand: HandTiles,
+    concealed: ConcealedTiles,
     melds: Vec<Meld>,
-    bonus_tiles: HashSet<Tile>,
-    seen_tiles: HashSet<Tile>,
+    bonus: HashSet<Tile>,
+    seen: HashSet<Tile>,
 }
 
 impl Hand {
@@ -62,18 +63,18 @@ impl Hand {
     pub fn draw(&mut self, tile: &Tile) {
         match tile.is_playable() {
             true => {
-                self.hand.add_n(tile, 1);
+                self.concealed.add_n(tile, 1);
             }
             false => {
-                self.bonus_tiles.insert(*tile);
+                self.bonus.insert(*tile);
             }
         };
-        self.seen_tiles.clear();
+        self.seen.clear();
     }
 
     pub fn discard(&mut self, tile: &Tile) -> Result<(), MahjongError> {
-        self.hand.remove_n(tile, 1)?;
-        self.seen_tiles.insert(tile.to_owned());
+        self.concealed.remove_n(tile, 1)?;
+        self.seen.insert(tile.to_owned());
         Ok(())
     }
 
@@ -82,7 +83,7 @@ impl Hand {
             return Err(MahjongError::TileNotPlayableError(tile.suit()));
         }
         let mut poss_melds = vec![];
-        if let Some(num) = self.hand.get(tile) {
+        if let Some(num) = self.concealed.get(tile) {
             if *num >= 2 {
                 poss_melds.push(Meld::new(
                     vec![tile.to_owned(), tile.to_owned()],
@@ -109,7 +110,7 @@ impl Hand {
             if let (Some(t1), Some(t2)) = (t1, t2) {
                 let mut tiles = [t1.to_owned(), t2.to_owned(), tile.to_owned()];
                 tiles.sort();
-                if self.hand.contains_key(t1) && self.hand.contains_key(t2) {
+                if self.concealed.contains_key(t1) && self.concealed.contains_key(t2) {
                     poss_melds.push(Meld::new(
                         vec![t1.to_owned(), t2.to_owned()],
                         Some(tile.to_owned()),
@@ -122,14 +123,14 @@ impl Hand {
     }
 
     pub fn meld(&mut self, meld: Meld) -> Result<(), MahjongError> {
-        let mut map = HandTiles {
+        let mut map = ConcealedTiles {
             ..Default::default()
         };
         for tile in meld.tiles() {
             *map.entry(tile.to_owned()).or_insert(0_u8) += 1;
         }
         for (tile, count) in map.iter() {
-            self.hand.remove_n(tile, *count)?;
+            self.concealed.remove_n(tile, *count)?;
         }
         self.melds.push(meld);
         Ok(())
@@ -137,7 +138,7 @@ impl Hand {
 
     pub fn get_angangs(&self) -> Vec<Meld> {
         let mut melds = Vec::new();
-        for (tile, count) in self.hand.iter() {
+        for (tile, count) in self.concealed.iter() {
             if *count == 4 {
                 melds.push(
                     Meld::new(
@@ -155,6 +156,10 @@ impl Hand {
             }
         }
         melds
+    }
+
+    pub fn hand(&self) -> &ConcealedTiles {
+        &self.concealed
     }
 }
 
@@ -176,20 +181,20 @@ mod tests {
         let mut hand = Hand::new();
         hand.draw(&Tile::Wan(TileValue::One));
         assert!(hand
-            .hand
+            .concealed
             .eq(&HashMap::from([(Tile::Wan(TileValue::One), 1)])));
         hand.draw(&Tile::Wan(TileValue::One));
         assert!(hand
-            .hand
+            .concealed
             .eq(&HashMap::from([(Tile::Wan(TileValue::One), 2)])));
     }
 
     #[test]
     fn test_no_seen_tiles_after_draw() {
         let mut hand = Hand::new();
-        hand.seen_tiles.insert(Tile::Wan(TileValue::One));
+        hand.seen.insert(Tile::Wan(TileValue::One));
         hand.draw(&Tile::Suo(TileValue::One));
-        assert_eq!(hand.seen_tiles.len(), 0);
+        assert_eq!(hand.seen.len(), 0);
     }
 
     #[test]
@@ -198,9 +203,9 @@ mod tests {
         hand.draw(&Tile::Wan(TileValue::One));
         hand.draw(&Tile::Wan(TileValue::One));
         hand.discard(&Tile::Wan(TileValue::One)).unwrap();
-        assert_eq!(hand.hand.0, HashMap::from([(Tile::Wan(TileValue::One), 1)]));
+        assert_eq!(hand.concealed.0, HashMap::from([(Tile::Wan(TileValue::One), 1)]));
         hand.discard(&Tile::Wan(TileValue::One)).unwrap();
-        assert!(hand.hand.eq(&HashMap::from([])));
+        assert!(hand.concealed.eq(&HashMap::from([])));
     }
 
     #[test]
@@ -214,7 +219,7 @@ mod tests {
         let mut hand = Hand::new();
         hand.draw(&Tile::Wan(TileValue::One));
         hand.discard(&Tile::Wan(TileValue::One)).unwrap();
-        assert!(hand.seen_tiles.contains(&Tile::Wan(TileValue::One)));
+        assert!(hand.seen.contains(&Tile::Wan(TileValue::One)));
     }
 
     #[test]
@@ -285,7 +290,7 @@ mod tests {
 
         assert_ok_eq!(hand.meld(meld.clone()), ());
         assert_eq!(hand.melds, vec![meld]);
-        assert!(hand.hand.eq(&HashMap::from([])));
+        assert!(hand.concealed.eq(&HashMap::from([])));
     }
 
     #[test]
