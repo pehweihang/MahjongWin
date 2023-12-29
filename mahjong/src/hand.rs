@@ -118,7 +118,7 @@ impl Hand {
             ..Default::default()
         };
         for tile in meld.tiles() {
-            *map.entry(tile.to_owned()).or_insert(0_u8) += 1;
+            map.add_n(tile, 1);
         }
         for (tile, count) in map.iter() {
             self.concealed.remove_n(tile, *count)?;
@@ -194,7 +194,9 @@ mod tests {
         hand.draw(&Tile::Wan(TileValue::One));
         hand.draw(&Tile::Wan(TileValue::One));
         hand.discard(&Tile::Wan(TileValue::One)).unwrap();
-        assert_eq!(hand.concealed.0, HashMap::from([(Tile::Wan(TileValue::One), 1)]));
+        assert!(hand
+            .concealed
+            .eq(&HashMap::from([(Tile::Wan(TileValue::One), 1)])),);
         hand.discard(&Tile::Wan(TileValue::One)).unwrap();
         assert!(hand.concealed.eq(&HashMap::from([])));
     }
