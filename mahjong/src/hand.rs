@@ -99,17 +99,15 @@ impl Hand {
 
         let tiles_to_check = [prev_prev, prev, next, next_next];
         let mut it = tiles_to_check.windows(2);
-        while let Some([t1, t2]) = it.next() {
-            if let (Some(t1), Some(t2)) = (t1, t2) {
-                let mut tiles = [t1.to_owned(), t2.to_owned(), tile.to_owned()];
-                tiles.sort();
-                if self.concealed.contains_key(t1) && self.concealed.contains_key(t2) {
-                    poss_melds.push(Meld::new(
-                        vec![t1.to_owned(), t2.to_owned()],
-                        Some(tile.to_owned()),
-                        MeldType::Chi,
-                    )?);
-                }
+        while let Some([Some(t1), Some(t2)]) = it.next() {
+            let mut tiles = [t1.to_owned(), t2.to_owned(), tile.to_owned()];
+            tiles.sort();
+            if self.concealed.contains_key(t1) && self.concealed.contains_key(t2) {
+                poss_melds.push(Meld::new(
+                    vec![t1.to_owned(), t2.to_owned()],
+                    Some(tile.to_owned()),
+                    MeldType::Chi,
+                )?);
             }
         }
         Ok(poss_melds)
