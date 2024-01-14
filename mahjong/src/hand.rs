@@ -152,6 +152,14 @@ impl Hand {
     pub fn concealed(&self) -> &ConcealedTiles {
         &self.concealed
     }
+
+    pub fn melds(&self) -> &Vec<Meld> {
+        &self.melds
+    }
+
+    pub fn bonus(&self) -> &HashSet<Tile> {
+        &self.bonus
+    }
 }
 
 #[cfg(test)]

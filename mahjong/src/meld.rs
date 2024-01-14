@@ -94,6 +94,14 @@ impl Meld {
     pub fn tiles(&self) -> &Vec<Tile> {
         &self.tiles
     }
+
+    pub fn suit(&self) -> &Suit {
+        &self.suit
+    }
+
+    pub fn meld_type(&self) -> &MeldType {
+        &self.meld_type
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
